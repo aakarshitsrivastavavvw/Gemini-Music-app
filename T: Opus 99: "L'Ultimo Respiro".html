@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opus 99: L'Ultimo Respiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f0f;
+            color: #e5e5e5;
+        }
+
+        h1 { font-family: 'Playfair Display', serif; }
+
+        #paper svg {
+            background-color: #fdfbf7;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            width: 100%;
+            height: auto;
+            padding: 20px;
+        }
+
+        .abcjs-cursor {
+            stroke: #d97706 !important;
+            stroke-width: 2px;
+        }
+
+        .control-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-12 px-4">
+
+    <div class="max-w-5xl w-full space-y-10">
+        
+        <div class="text-center space-y-4">
+            <h1 class="text-5xl font-bold tracking-tight text-amber-50">Opus 99: L'Ultimo Respiro</h1>
+            <p class="text-xl text-zinc-500 italic font-serif">A Master's Final Testament</p>
+            <div class="w-24 h-1 bg-amber-600 mx-auto rounded-full mt-6"></div>
+        </div>
+
+        <!-- Custom Audio Interface -->
+        <div class="flex flex-col items-center justify-center space-y-6 bg-zinc-900/80 p-8 rounded-2xl border border-zinc-800 shadow-2xl">
+            <div id="status-message" class="text-amber-200 text-sm font-medium tracking-wide uppercase">
+                Ready to Perform
+            </div>
+            
+            <div class="flex space-x-4">
+                <button id="play-btn" class="control-btn px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-full font-bold flex items-center shadow-lg shadow-amber-900/20">
+                    <span id="btn-text">INITIALIZE & PLAY</span>
+                </button>
+                <button id="stop-btn" class="control-btn px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-full font-bold hidden">
+                    STOP
+                </button>
+            </div>
+
+            <p class="text-zinc-500 text-xs max-w-md text-center">
+                Click Play to start the performance. The browser requires user interaction to enable the audio engine.
+            </p>
+        </div>
+
+        <div id="paper" class="w-full"></div>
+    </div>
+
+    <script>
+        const opusABC = `
+X: 1
+T: Opus 99: "L'Ultimo Respiro"
+C: The Master
+M: 4/4
+L: 1/8
+Q: "Grave, ma con fuoco" 1/4=54
+K: Cm
+%%staves {1 2}
+V: 1 clef=treble
+V: 2 clef=bass
+[V:1] !mf! [C2E2G2c2] (3Gce [C2E2G2c2] (3Gce | [C2F2A2c2] (3Acf [C2F2A2c2] (3Acf | [C2E2G2c2] (3Gce [C2E2G2c2] (3Gce | [B,2D2F2=B2] (3F=Bd [B,2D2F2=B2] z2 |
+[V:2] [C,,C,]8 | [F,,F,]8 | [C,,C,]8 | [G,,G,]8 |
+[V:1] !p! (3cde (3dcB (3ABc (3BAG | (3FGA (3GFE (3DEF (3EDC | !crescendo(! [G,4C4E4G4] [G,4C4E4G4] | [G,4B,4D4F4] !crescendo)! [G,4B,4D4F4] |
+[V:2] [A,,A,]4 [E,,E,]4 | [F,,F,]4 [C,,C,]4 | [G,,G,]8 | [G,,G,]8 |
+[V:1] !f! (3G,CE (3Gce (3c'ge (3cGE | (3A,CF (3Acf (3c'af (3cAF | (3G,CE (3Gce (3c'ge (3cGE | (3G,=B,D (3G=bd (3d'bg (3d=BG |
+[V:2] C,,4 C,4 | F,,4 F,4 | C,,4 C,4 | G,,4 G,4 |
+[V:1] (3G,CE (3Gce (3c'ge (3cGE | (3A,CF (3Acf (3c'af (3cAF | (3G,CE (3Gce (3c'ge (3cGE | (3G,=B,D (3G=bd (3d'bg (3d=BG |
+[V:2] C,,4 C,4 | F,,4 F,4 | C,,4 C,4 | G,,4 G,4 |
+[V:1] !ff! [c2c'2] [g2g'2] [e2e'2] [c2c'2] | [f2f'2] [c2c'2] [A2A'2] [F2F'2] | [c2c'2] [g2g'2] [e2e'2] [c2c'2] | [d2d'2] [g2g'2] [b2b'2] [d'2d''2] |
+[V:2] [C,,C,]4 [C,,C,]4 | [F,,F,]4 [F,,F,]4 | [C,,C,]4 [C,,C,]4 | [G,,G,]4 [G,,G,]4 |
+[V:1] [e2e'2] [c2c'2] [g2g'2] [e2e'2] | [a2a'2] [f2f'2] [c'2c''2] [a2a'2] | [g2g'2] [e2e'2] [c2c'2] [G2G'2] | !diminuendo(! [F2F'2] [D2D'2] [B,2B,'2] [G,2G,'2] !diminuendo)!|
+[V:2] [C,,C,]4 [C,,C,]4 | [F,,F,]4 [F,,F,]4 | [C,,C,]4 [C,,C,]4 | [G,,G,]4 [G,,G,]4 |
+[V:1] !mp! [C4E4G4c4] [C4E4G4c4] | [C4F4A4c4] [C4F4A4c4] | [C4E4G4c4] [C4E4G4c4] | [B,4D4F4=B4] [B,4D4F4=B4] |
+[V:2] C,,8 | F,,8 | C,,8 | G,,8 |
+[V:1] !p! c2 G2 E2 C2 | !pp! c2 G2 E2 C2 | !ppp! H[C8=E8G8c8] | H[C8=E8G8c8] |]
+[V:2] C,8 | C,8 | H[C,,8C,8] | H[C,,8C,8] |]`;
+
+        let visualObj;
+        let synthInstance;
+        let audioContext;
+
+        function init() {
+            // Render the sheet music
+            const renders = ABCJS.renderAbc("paper", opusABC, {
+                responsive: "resize",
+                add_classes: true
+            });
+            visualObj = renders[0];
+            
+            document.getElementById('play-btn').addEventListener('click', handlePlay);
+            document.getElementById('stop-btn').addEventListener('click', handleStop);
+        }
+
+        async function handlePlay() {
+            const btn = document.getElementById('play-btn');
+            const btnText = document.getElementById('btn-text');
+            const stopBtn = document.getElementById('stop-btn');
+            const status = document.getElementById('status-message');
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            try {
+                status.innerText = "Tuning Instrument...";
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+
+                if (!synthInstance) {
+                    synthInstance = new ABCJS.synth.CreateSynth();
+                    
+                    // Calculation of timing based on ABCJS visualObj properties
+                    // visualObj.getMillisecondsPerMeasure() doesn't exist; use the synth's internal parser or explicit tempo.
+                    await synthInstance.init({
+                        visualObj: visualObj,
+                        audioContext: audioContext,
+                        options: {
+                            soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/"
+                        }
+                    });
+                    await synthInstance.prime();
+                }
+
+                status.innerText = "Performing...";
+                btn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+
+                // Start audio and the visual cursor
+                await synthInstance.start();
+                
+                synthInstance.onEnded = () => {
+                    handleStop();
+                };
+
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Connection Failed. Retry.";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                btnText.innerText = "RETRY PERFORMANCE";
+            }
+        }
+
+        function handleStop() {
+            if (synthInstance) {
+                synthInstance.stop();
+            }
+            document.getElementById('play-btn').classList.remove('hidden');
+            document.getElementById('play-btn').disabled = false;
+            document.getElementById('play-btn').classList.remove('opacity-50');
+            document.getElementById('btn-text').innerText = "PLAY AGAIN";
+            document.getElementById('stop-btn').classList.add('hidden');
+            document.getElementById('status-message').innerText = "Performance Concluded";
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
