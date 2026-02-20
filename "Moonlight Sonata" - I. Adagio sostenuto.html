@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beethoven: Moonlight Sonata</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f0f;
+            color: #e5e5e5;
+        }
+
+        h1 { font-family: 'Playfair Display', serif; }
+
+        #paper svg {
+            background-color: #fdfbf7;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            width: 100%;
+            height: auto;
+            padding: 20px;
+        }
+
+        .abcjs-cursor {
+            stroke: #d97706 !important;
+            stroke-width: 2px;
+        }
+
+        .control-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-12 px-4">
+
+    <div class="max-w-5xl w-full space-y-10">
+        
+        <div class="text-center space-y-4">
+            <h1 class="text-5xl font-bold tracking-tight text-amber-50">Piano Sonata No. 14</h1>
+            <p class="text-xl text-zinc-500 italic font-serif">"Moonlight Sonata" - I. Adagio sostenuto</p>
+            <div class="w-24 h-1 bg-amber-600 mx-auto rounded-full mt-6"></div>
+        </div>
+
+        <!-- Custom Audio Interface -->
+        <div class="flex flex-col items-center justify-center space-y-6 bg-zinc-900/80 p-8 rounded-2xl border border-zinc-800 shadow-2xl">
+            <div id="status-message" class="text-amber-200 text-sm font-medium tracking-wide uppercase">
+                Ready to Perform
+            </div>
+            
+            <div class="flex space-x-4">
+                <button id="play-btn" class="control-btn px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-full font-bold flex items-center shadow-lg shadow-amber-900/20">
+                    <span id="btn-text">INITIALIZE & PLAY</span>
+                </button>
+                <button id="stop-btn" class="control-btn px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-full font-bold hidden">
+                    STOP
+                </button>
+            </div>
+
+            <p class="text-zinc-500 text-xs max-w-md text-center">
+                Click Play to start the performance. The browser requires user interaction to enable the audio engine.
+            </p>
+        </div>
+
+        <div id="paper" class="w-full"></div>
+    </div>
+
+    <script>
+        const opusABC = `
+X: 1
+T: Piano Sonata No. 14 "Moonlight"
+C: Ludwig van Beethoven
+M: 4/4
+L: 1/8
+Q: "Adagio sostenuto" 1/4=50
+K: C#m
+%%staves {1 2}
+V: 1 clef=treble
+V: 2 clef=bass
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |
+[V:1] z (G,CE) z (G,CE) | z (G,CE) z (G,CE) | z (A,CE) z (A,CF) | z (B,DF) z (B,EG) |
+[V:2] [C,,C,]8 | [B,,,B,,]8 | [A,,,A,,]4 [F,,,F,,]4 | [G,,,G,,]4 [G,,,G,,]4 |`;
+
+        let visualObj;
+        let synthInstance;
+        let audioContext;
+
+        function init() {
+            const renders = ABCJS.renderAbc("paper", opusABC, {
+                responsive: "resize",
+                add_classes: true
+            });
+            visualObj = renders[0];
+            
+            document.getElementById('play-btn').addEventListener('click', handlePlay);
+            document.getElementById('stop-btn').addEventListener('click', handleStop);
+        }
+
+        async function handlePlay() {
+            const btn = document.getElementById('play-btn');
+            const btnText = document.getElementById('btn-text');
+            const stopBtn = document.getElementById('stop-btn');
+            const status = document.getElementById('status-message');
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            try {
+                status.innerText = "Tuning Instrument...";
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+
+                if (!synthInstance) {
+                    synthInstance = new ABCJS.synth.CreateSynth();
+                    await synthInstance.init({
+                        visualObj: visualObj,
+                        audioContext: audioContext,
+                        options: {
+                            soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/"
+                        }
+                    });
+                    await synthInstance.prime();
+                }
+
+                status.innerText = "Performing...";
+                btn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+
+                await synthInstance.start();
+                
+                synthInstance.onEnded = () => {
+                    handleStop();
+                };
+
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Connection Failed. Retry.";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                btnText.innerText = "RETRY PERFORMANCE";
+            }
+        }
+
+        function handleStop() {
+            if (synthInstance) {
+                synthInstance.stop();
+            }
+            document.getElementById('play-btn').classList.remove('hidden');
+            document.getElementById('play-btn').disabled = false;
+            document.getElementById('play-btn').classList.remove('opacity-50');
+            document.getElementById('btn-text').innerText = "PLAY AGAIN";
+            document.getElementById('stop-btn').classList.add('hidden');
+            document.getElementById('status-message').innerText = "Performance Concluded";
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
